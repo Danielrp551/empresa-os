@@ -1,0 +1,23 @@
+{
+  "$schema": "https://json.schemastore.org/claude-code-plugin-manifest.json",
+  "name": "empresa-os",
+  "displayName": "empresa-os",
+  "description": "Documenta y opera una empresa como codigo: estructura de carpetas fija, constitucion de 13 reglas, metodologias reutilizables, decisiones registradas y ritmo operativo.",
+  "author": {
+    "name": "Danielrp551",
+    "url": "https://github.com/Danielrp551"
+  },
+  "homepage": "https://github.com/Danielrp551/empresa-os",
+  "repository": "https://github.com/Danielrp551/empresa-os",
+  "license": "MIT",
+  "keywords": [
+    "empresa",
+    "negocio",
+    "operaciones",
+    "documentacion",
+    "adr",
+    "playbook",
+    "espanol"
+  ],
+  "hooks": "./hooks/hooks.json"
+}

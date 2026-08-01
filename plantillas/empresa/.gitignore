@@ -1,0 +1,39 @@
+# === SECRETOS — regla 13, no se toca ===
+# Se ignora el CONTENIDO de secrets/, no la carpeta: así su README (que explica
+# qué va ahí y qué nunca) sí se versiona.
+**/secrets/*
+!**/secrets/README.md
+!**/secrets/*.ejemplo
+*.env
+!*.env.ejemplo
+.env*
+!.env.ejemplo
+*.pem
+*.key
+*.p12
+*.pfx
+credentials.json
+service-account*.json
+.credentials*
+
+# === Personal / local ===
+CLAUDE.local.md
+.claude/settings.local.json
+
+# === Sistema ===
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# === Runtime ===
+node_modules/
+__pycache__/
+venv/
+.venv/
+*.log
+
+# === Evidencia pesada ===
+# Descomenta si las capturas y videos hacen crecer demasiado el repositorio.
+# La evidencia se conserva local igual; lo que se pierde es el historial de la imagen.
+# **/evidencia/*.mp4
+# **/creativos/**/*.mp4

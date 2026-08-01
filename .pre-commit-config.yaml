@@ -1,0 +1,34 @@
+# Capa 3 de la defensa de secretos (ver estandar/06-seguridad-y-secretos.md).
+#
+# Instalar una vez por copia del repositorio:
+#   pip install pre-commit
+#   pre-commit install
+#
+# A partir de ahí, cada `git commit` escanea lo que se está por commitear y lo
+# bloquea si detecta un secreto. Es la red que atrapa lo que el .gitignore no vio
+# porque el secreto estaba pegado dentro de un markdown.
+
+repos:
+  - repo: https://github.com/gitleaks/gitleaks
+    rev: v8.29.0
+    hooks:
+      - id: gitleaks
+
+  - repo: https://github.com/pre-commit/pre-commit-hooks
+    rev: v5.0.0
+    hooks:
+      - id: check-json
+      - id: check-yaml
+      - id: end-of-file-fixer
+      - id: trailing-whitespace
+      - id: check-merge-conflict
+      - id: check-added-large-files
+        args: ["--maxkb=2048"]
+
+  - repo: local
+    hooks:
+      - id: validar-estandar
+        name: Validar el estándar empresa-os
+        entry: node scripts/validar.mjs
+        language: system
+        pass_filenames: false

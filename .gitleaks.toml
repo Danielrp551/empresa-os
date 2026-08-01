@@ -1,0 +1,27 @@
+# Configuración de gitleaks para empresa-os.
+# Parte del conjunto de reglas por defecto (160+ tipos de credencial) y añade
+# lo específico del estándar.
+
+[extend]
+useDefault = true
+
+[[rules]]
+id = "empresa-os-env-con-valor"
+description = "Variable de entorno con un valor asignado dentro de un .env versionado"
+regex = '''(?i)^[A-Z0-9_]*(TOKEN|SECRET|PASSWORD|APIKEY|API_KEY|PRIVATE_KEY|CLIENT_SECRET|ACCESS_KEY)[A-Z0-9_]*\s*=\s*\S{8,}'''
+path = '''\.env($|\.)'''
+
+[allowlist]
+description = "Falsos positivos conocidos"
+paths = [
+  # El validador y el hook contienen los patrones a propósito, para detectarlos.
+  '''scripts/validar\.mjs''',
+  '''plugins/empresa-os/scripts/proteger-secretos\.mjs''',
+  # Los .ejemplo existen justamente para mostrar el formato sin valores.
+  '''\.ejemplo$''',
+  '''\.example$''',
+]
+regexes = [
+  # Marcadores de plantilla, no secretos.
+  '''\{\{[^}]+\}\}''',
+]

@@ -1,0 +1,49 @@
+# === SECRETOS — regla 13 de la constitución, no se toca ===
+# Se ignora el CONTENIDO de secrets/, no la carpeta: así su README (que explica
+# las reglas) sí se versiona. Ignorar el directorio entero se llevaría el README
+# por delante, y ese es justo el archivo que alguien va a buscar ahí.
+**/secrets/*
+**/secretos/*
+!**/secrets/README.md
+!**/secretos/README.md
+!**/secrets/*.ejemplo
+!**/secrets/*.example
+*.env
+!*.env.ejemplo
+!*.env.example
+.env*
+!.env.ejemplo
+*.pem
+*.key
+*.p12
+*.pfx
+credentials.json
+service-account*.json
+token*.json
+.credentials*
+
+# === Personal / local ===
+CLAUDE.local.md
+.claude/settings.local.json
+.claude/tasks/
+.claude/shell-snapshots/
+
+# === Sistema ===
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# === Runtime ===
+node_modules/
+__pycache__/
+*.pyc
+venv/
+.venv/
+dist/
+build/
+*.log
+
+# === Evidencia pesada (se guarda local, no se versiona) ===
+# Descomenta en la carpeta de una empresa si las capturas pesan demasiado.
+# **/evidencia/*.png
+# **/evidencia/*.mp4

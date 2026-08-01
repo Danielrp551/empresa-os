@@ -1,0 +1,56 @@
+name: Validar el estándar
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  estandar:
+    name: Estructura, plugin y skills
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+
+      - name: Validar repositorio
+        run: node scripts/validar.mjs
+
+      - name: Comprobar que los hooks parsean
+        run: |
+          node --check plugins/empresa-os/scripts/proteger-secretos.mjs
+          node --check plugins/empresa-os/scripts/contexto-empresa.mjs
+
+      - name: Probar el hook de secretos (debe bloquear)
+        run: |
+          salida=$(echo '{"tool_name":"Bash","cwd":"/tmp","tool_input":{"command":"git add secrets/x.env"}}' \
+            | node plugins/empresa-os/scripts/proteger-secretos.mjs)
+          echo "$salida"
+          echo "$salida" | grep -q '"permissionDecision":"deny"' \
+            || { echo "FALLO: el hook no bloqueó un git add de secrets/"; exit 1; }
+
+      - name: Probar el hook de secretos (debe permitir)
+        run: |
+          salida=$(echo '{"tool_name":"Bash","cwd":"/tmp","tool_input":{"command":"git status"}}' \
+            | node plugins/empresa-os/scripts/proteger-secretos.mjs)
+          [ -z "$salida" ] || { echo "FALLO: el hook bloqueó un comando inofensivo"; exit 1; }
+
+  secretos:
+    name: Escaneo de secretos
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: gitleaks
+        uses: gitleaks/gitleaks-action@v2
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
