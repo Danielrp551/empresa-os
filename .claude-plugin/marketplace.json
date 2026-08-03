@@ -6,13 +6,10 @@
     "name": "Danielrp551",
     "url": "https://github.com/Danielrp551"
   },
-  "metadata": {
-    "pluginRoot": "./plugins"
-  },
   "plugins": [
     {
       "name": "empresa-os",
-      "source": "empresa-os",
+      "source": "./plugins/empresa-os",
       "description": "17 skills, 3 subagentes y hooks de seguridad para operar una empresa bajo el estandar empresa-os: estructura de carpetas, constitucion, metodologias, decisiones, ritmo operativo y cierre de ciclos.",
       "category": "productivity",
       "tags": [

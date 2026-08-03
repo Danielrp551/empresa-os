@@ -1,7 +1,7 @@
 ---
 name: revision
 description: Ejecuta un checkpoint de una unidad de trabajo (campana, test, proyecto, tramite) jalando los numeros reales, escribiendo el archivo fechado en revisiones/ y dejando la linea-resumen en el TABLERO. Usala cuando toque revisar como va algo que esta corriendo, cuando el usuario pregunte "como va la campana" o cuando la metodologia marque un checkpoint.
-argument-hint: [unidad-de-trabajo] [checkpoint]
+argument-hint: "[unidad-de-trabajo] [checkpoint]"
 ---
 
 # Checkpoint de una unidad de trabajo

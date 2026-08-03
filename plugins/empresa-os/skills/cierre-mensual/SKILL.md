@@ -1,6 +1,6 @@
 ---
 name: cierre-mensual
-description: Ejecuta el cierre mensual de la empresa: numeros reales del mes, unit economics contra lo que se creia, obligaciones y vencimientos, y archivo de comprobantes. Usala el primer dia habil del mes, cuando el usuario pida cerrar el mes, o cuando haya que saber si el negocio gano o perdio plata.
+description: "Ejecuta el cierre mensual de la empresa: numeros reales del mes, unit economics contra lo que se creia, obligaciones y vencimientos, y archivo de comprobantes. Usala el primer dia habil del mes, cuando el usuario pida cerrar el mes, o cuando haya que saber si el negocio gano o perdio plata."
 disable-model-invocation: true
 ---
 

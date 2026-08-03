@@ -1,7 +1,7 @@
 ---
 name: campana
 description: Monta y opera una campana de adquisicion en cualquier plataforma de anuncios con naming espejo, medicion consistente, gate previo al gasto y checkpoints con criterios de kill escritos de antemano. Usala al lanzar publicidad, montar un test de canal, o cuando el usuario quiera promocionar algo con presupuesto.
-argument-hint: [producto] [numero-de-test]
+argument-hint: "[producto] [numero-de-test]"
 ---
 
 # Campanas de adquisicion

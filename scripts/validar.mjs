@@ -30,14 +30,82 @@ const leerJson = (ruta) => {
   }
 };
 
-/** Frontmatter YAML minimo: solo pares clave: valor de primer nivel. */
-function frontmatter(texto) {
+/**
+ * Frontmatter YAML minimo: solo pares clave: valor de primer nivel.
+ *
+ * No monta un parser YAML completo (el repo corre sin dependencias), pero si
+ * rechaza lo que un parser real rechaza. Leer el valor con una regex permisiva
+ * no vale: cuando el YAML no parsea, Claude Code carga la skill con metadata
+ * vacia y se le cae la description, asi que deja de dispararse sin avisar.
+ */
+
+/** Caracteres que YAML nunca deja abrir un escalar plano. */
+const INDICADORES = ["&", "*", "!", "|", ">", "%", "@", "`", ",", "#"];
+/** Estos solo actuan de indicador si les sigue un espacio o acaba la linea. */
+const INDICADORES_CON_ESPACIO = ["-", "?", ":"];
+
+/** Devuelve el motivo por el que un escalar sin comillas no parsea, o null. */
+function motivoEscalarInvalido(v) {
+  if (v === "") return null;
+  if (v[0] === "[" || v[0] === "{") {
+    const cierre = v[0] === "[" ? "]" : "}";
+    const tipo = v[0] === "[" ? "lista" : "mapa";
+    if (!v.endsWith(cierre) || v.slice(1, -1).includes(cierre))
+      return `abre con '${v[0]}', asi que YAML lo lee como ${tipo} en flujo y no cierra limpio — entrecomillalo`;
+    return null;
+  }
+  if (INDICADORES.includes(v[0]))
+    return `empieza por '${v[0]}', que YAML lee como indicador — entrecomillalo`;
+  if (INDICADORES_CON_ESPACIO.includes(v[0]) && (v.length === 1 || /\s/.test(v[1])))
+    return `empieza por '${v[0]}' y un espacio, que YAML lee como indicador — entrecomillalo`;
+  if (/:(\s|$)/.test(v))
+    return "lleva ':' seguido de espacio o de fin de linea, y ahi YAML corta el valor — entrecomillalo";
+  if (/\s#/.test(v))
+    return "lleva ' #', que YAML toma como comienzo de comentario y descarta el resto — entrecomillalo";
+  return null;
+}
+
+/**
+ * Lee el valor de un par del frontmatter.
+ * Devuelve { valor, motivo }: motivo != null significa que YAML no lo acepta.
+ */
+function leerValor(v) {
+  const q = v[0];
+  if (q !== '"' && q !== "'") return { valor: v, motivo: motivoEscalarInvalido(v) };
+  if (v.length < 2 || !v.endsWith(q))
+    return { valor: v, motivo: `abre con ${q} y nunca cierra` };
+  const cuerpo = v.slice(1, -1);
+  if (q === '"') {
+    if (/(?:^|[^\\])(?:\\\\)*"/.test(cuerpo))
+      return { valor: cuerpo, motivo: 'lleva una comilla doble sin escapar dentro de comillas dobles' };
+    return { valor: cuerpo.replace(/\\(["\\])/g, "$1"), motivo: null };
+  }
+  if (/(?:^|[^'])'(?:[^']|$)/.test(cuerpo))
+    return { valor: cuerpo, motivo: "lleva una comilla simple sin duplicar dentro de comillas simples" };
+  return { valor: cuerpo.replace(/''/g, "'"), motivo: null };
+}
+
+function frontmatter(texto, etiqueta) {
   const m = texto.match(/^---\r?\n([\s\S]*?)\r?\n---/);
   if (!m) return null;
   const datos = {};
-  for (const linea of m[1].split(/\r?\n/)) {
-    const mm = linea.match(/^([a-zA-Z0-9_-]+):\s*(.*)$/);
-    if (mm) datos[mm[1]] = mm[2].trim().replace(/^["']|["']$/g, "");
+  const lineas = m[1].split(/\r?\n/);
+  for (let i = 0; i < lineas.length; i++) {
+    const linea = lineas[i];
+    const donde = `${etiqueta}: frontmatter, linea ${i + 2}`;
+    if (linea.trim() === "" || linea.trimStart().startsWith("#")) continue;
+    if (/^\s/.test(linea)) {
+      err(`${donde}: va indentada; aqui solo caben pares 'clave: valor' de primer nivel`);
+      continue;
+    }
+    const mm = linea.match(/^([A-Za-z0-9_-]+):(?:[ \t]+(.*))?$/);
+    if (!mm) {
+      err(`${donde}: no es un par 'clave: valor' valido; YAML falla y el archivo carga con metadata vacia`);
+      continue;
+    }
+    const { valor, motivo } = leerValor((mm[2] ?? "").trim());
+    if (motivo) err(`${donde}: el valor de '${mm[1]}' ${motivo}`);
+    datos[mm[1]] = valor;
   }
   return datos;
 }
@@ -52,11 +120,21 @@ else {
     if (!mk.owner?.name) err("marketplace.json: falta 'owner.name'");
     if (!Array.isArray(mk.plugins) || !mk.plugins.length)
       err("marketplace.json: 'plugins' vacio");
+    // 'pluginRoot' esta en el esquema pero el CLI no lo aplica al resolver: deja
+    // las rutas a medio camino y el plugin no instala. Se resuelve contra la raiz.
+    if (mk.metadata?.pluginRoot)
+      err("marketplace.json: 'metadata.pluginRoot' no lo aplica el CLI al resolver; pon la ruta completa en cada 'source'");
     for (const p of mk.plugins ?? []) {
       if (!p.name) err("marketplace.json: una entrada de plugin no tiene 'name'");
       if (!p.source) err(`marketplace.json: el plugin ${p.name} no tiene 'source'`);
-      const dir = join(raiz, mk.metadata?.pluginRoot ?? ".", String(p.source));
-      if (!existsSync(dir)) err(`marketplace.json: la fuente de ${p.name} no existe: ${dir}`);
+      else if (typeof p.source === "string") {
+        // El esquema exige ^\./ para la forma ruta. Sin el './' el CLI aborta con
+        // "source type your Claude Code version does not support".
+        if (!p.source.startsWith("./"))
+          err(`marketplace.json: el 'source' de ${p.name} es la ruta '${p.source}' y debe empezar por './' — tal cual, el plugin no instala`);
+        const dir = join(raiz, p.source);
+        if (!existsSync(dir)) err(`marketplace.json: la fuente de ${p.name} no existe: ${dir}`);
+      }
     }
   }
 }
@@ -70,11 +148,22 @@ else {
   else {
     const pj = leerJson(rutaManifiesto);
     if (pj && !pj.name) err("plugin.json: falta 'name' (unico campo obligatorio)");
+    if (pj && !pj.version) avi("plugin.json: sin 'version' en semver; el CLI acaba mostrando el hash del commit");
     if (pj?.hooks) {
-      const h = join(dirPlugin, String(pj.hooks).replace(/^\.\//, ""));
-      if (!existsSync(h)) err(`plugin.json: 'hooks' apunta a un archivo inexistente: ${h}`);
-      else leerJson(h);
+      const rel = String(pj.hooks).replace(/^\.\//, "");
+      // hooks/hooks.json se carga solo. Declararlo ademas lo carga dos veces, y
+      // eso no rompe los hooks: tumba el plugin entero con "failed to load".
+      if (rel === "hooks/hooks.json")
+        err("plugin.json: 'hooks' no debe apuntar a ./hooks/hooks.json — esa ruta ya se carga sola y declararla duplica la carga y tumba el plugin entero");
+      else {
+        const h = join(dirPlugin, rel);
+        if (!existsSync(h)) err(`plugin.json: 'hooks' apunta a un archivo inexistente: ${h}`);
+        else leerJson(h);
+      }
     }
+    // El hooks.json que se autocarga tiene que existir y parsear igual.
+    const hAuto = join(dirPlugin, "hooks", "hooks.json");
+    if (existsSync(hAuto)) leerJson(hAuto);
   }
 
   // Los componentes NO pueden vivir dentro de .claude-plugin/
@@ -97,7 +186,7 @@ else {
         continue;
       }
       const texto = readFileSync(ruta, "utf8");
-      const fm = frontmatter(texto);
+      const fm = frontmatter(texto, `skills/${e.name}`);
       if (!fm) {
         err(`skills/${e.name}: SKILL.md sin frontmatter YAML`);
         continue;
@@ -129,7 +218,7 @@ else {
   if (existsSync(dirAgentes)) {
     for (const f of readdirSync(dirAgentes)) {
       if (!f.endsWith(".md")) continue;
-      const fm = frontmatter(readFileSync(join(dirAgentes, f), "utf8"));
+      const fm = frontmatter(readFileSync(join(dirAgentes, f), "utf8"), `agents/${f}`);
       if (!fm) err(`agents/${f}: sin frontmatter`);
       else {
         if (!fm.name) err(`agents/${f}: falta 'name'`);

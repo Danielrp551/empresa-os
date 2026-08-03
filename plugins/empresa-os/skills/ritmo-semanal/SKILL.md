@@ -1,6 +1,6 @@
 ---
 name: ritmo-semanal
-description: Ejecuta la revision semanal de la empresa: jala los numeros reales, actualiza el scorecard y ESTADO.md, revisa los tableros abiertos y propone decisiones con su razon. Usala los lunes, cuando el usuario pregunte como va la empresa, o cuando ESTADO.md lleve mas de una semana sin tocarse.
+description: "Ejecuta la revision semanal de la empresa: jala los numeros reales, actualiza el scorecard y ESTADO.md, revisa los tableros abiertos y propone decisiones con su razon. Usala los lunes, cuando el usuario pregunte como va la empresa, o cuando ESTADO.md lleve mas de una semana sin tocarse."
 disable-model-invocation: true
 ---
 

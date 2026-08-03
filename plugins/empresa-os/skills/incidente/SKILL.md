@@ -1,7 +1,7 @@
 ---
 name: incidente
-description: Documenta un incidente operativo como postmortem sin culpa, con linea de tiempo, impacto, causa raiz sistemica y acciones con dueño y fecha. Usala cuando algo se rompa hacia afuera: un cobro mal hecho, un pedido que no llego, el sitio caido, un dato expuesto, un reclamo de cliente que revela una falla del proceso.
-argument-hint: [que-paso]
+description: "Documenta un incidente operativo como postmortem sin culpa, con linea de tiempo, impacto, causa raiz sistemica y acciones con dueño y fecha. Usala cuando algo se rompa hacia afuera: un cobro mal hecho, un pedido que no llego, el sitio caido, un dato expuesto, un reclamo de cliente que revela una falla del proceso."
+argument-hint: "[que-paso]"
 ---
 
 # Postmortem de un incidente
