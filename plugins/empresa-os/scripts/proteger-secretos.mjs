@@ -25,7 +25,22 @@ const PATRONES = [
   { re: /(^|[\/\\])\.pypirc$/i, que: ".pypirc (suele llevar tokens)" },
 ];
 
-const esSecreto = (ruta) => PATRONES.find((p) => p.re.test(ruta.replace(/^["']|["']$/g, "")));
+// Lo que la plantilla versiona A PROPOSITO: el README que explica que va en
+// secrets/ y que nunca, y los *.ejemplo sin valores reales. Su .gitignore los
+// des-ignora explicitamente. Sin esta excepcion el hook se contradice con la
+// plantilla del propio plugin y ninguna empresa recien creada puede hacer su
+// primer commit.
+const PERMITIDOS = [
+  /(^|[\/\\])secretos?[\/\\]README\.md$/i,
+  /(^|[\/\\])secrets?[\/\\]README\.md$/i,
+  /\.(ejemplo|example|sample|template)$/i,
+];
+
+const esSecreto = (ruta) => {
+  const r = ruta.replace(/^["']|["']$/g, "");
+  if (PERMITIDOS.some((p) => p.test(r))) return null;
+  return PATRONES.find((p) => p.re.test(r));
+};
 
 function denegar(razon) {
   process.stdout.write(
@@ -86,7 +101,14 @@ if (/\bgit\s+add\b[^\n]*\s(-f|--force)\b/i.test(comando)) {
 }
 
 // --- 2. Rutas explicitas en el comando ---
-const tokens = comando
+// El mensaje del commit es prosa, no rutas: explicar "secrets/ queda fuera del
+// repositorio" no puede bloquear el commit que hace exactamente eso.
+const comandoSinMensaje = comando.replace(
+  /\s-{1,2}(?:m|message)(?:=|\s+)(["'])(?:\\.|(?!\1)[\s\S])*\1/gi,
+  " "
+);
+
+const tokens = comandoSinMensaje
   .split(/[\s;|&]+/)
   .filter((t) => t && !t.startsWith("-") && !/^(git|add|commit|stash|push|--)$/i.test(t));
 for (const t of tokens) {
@@ -119,7 +141,8 @@ if (expuestos.length) {
     `BLOQUEADO por la regla 13 (los secretos no viajan).\n\n` +
       `Git NO esta ignorando estos archivos, asi que un "git add ." los meteria al historial:\n${lista}\n\n` +
       `Arregla el .gitignore antes de continuar. Deberia incluir al menos:\n` +
-      `  secrets/\n  *.env\n  !*.env.ejemplo\n  *.pem\n  *.key\n\n` +
+      `  **/secrets/*\n  !**/secrets/README.md\n  !**/secrets/*.ejemplo\n` +
+      `  *.env\n  !*.env.ejemplo\n  *.pem\n  *.key\n\n` +
       `Si alguno ya esta rastreado por git, ademas hay que sacarlo con: git rm --cached <ruta>\n` +
       `Y si llego a subirse alguna vez: revoca y regenera esa credencial antes que nada.`
   );
